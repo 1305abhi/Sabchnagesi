@@ -137,10 +137,12 @@ def check_local(text: str) -> float:
         print("Note: If this is the first run, it will download ~500MB of model weights. Please wait.")
         
         # Disable progress bar or let it run
+        import torch
+        device = 0 if torch.cuda.is_available() else -1
         _local_pipeline = pipeline(
             "text-classification", 
             model="Hello-SimpleAI/chatgpt-detector-roberta",
-            device_map="auto" # Will use GPU if available, else CPU
+            device=device
         )
         
     chunks = chunk_text(text)
