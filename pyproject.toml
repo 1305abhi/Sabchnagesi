@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SabChnagaSi"
+version = "0.1.0"
+description = "A CLI tool to check if a PDF is AI-generated or human-written."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+dependencies = [
+    "pypdf>=4.0.0",
+    "requests>=2.30.0",
+    "transformers>=4.30.0",
+    "torch>=2.0.0",
+    "click>=8.0.0",
+]
+
+[project.scripts]
+SabChnagaSi = "detector.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["detector*"]

@@ -1,0 +1,151 @@
+import click
+import os
+import json
+import sys
+
+CONFIG_PATH = os.path.expanduser("~/.ai-check-config.json")
+
+def load_config():
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
+
+def save_config(config):
+    try:
+        with open(CONFIG_PATH, 'w') as f:
+            json.dump(config, f, indent=4)
+    except Exception as e:
+        click.echo(click.style(f"Warning: Failed to save config: {e}", fg="yellow"))
+
+def run_setup():
+    click.echo(click.style("\n=== SabChnagaSi Onboarding Configuration ===", fg="cyan", bold=True))
+    click.echo("Choose your AI check method:")
+    click.echo("  [1] API Check (Requires a key for GPTZero or Sapling. High accuracy, very fast)")
+    click.echo("  [2] FREE Check (Downloads local AI model Hello-SimpleAI/chatgpt-detector-roberta. Offline, 100% free)")
+    
+    choice = ""
+    while choice not in ["1", "2"]:
+        choice = click.prompt("Enter choice (1 or 2)", type=str).strip()
+        
+    if choice == "1":
+        click.echo("\n--- API Setup ---")
+        click.echo("Recommended platforms: gptzero, sapling")
+        click.echo("Please enter credentials in this format: platform_name,API_KEY")
+        click.echo("Example: gptzero,your_api_key_here")
+        
+        valid = False
+        while not valid:
+            creds = click.prompt("Credentials", type=str).strip()
+            if "," in creds:
+                parts = creds.split(",", 1)
+                platform = parts[0].strip().lower()
+                key = parts[1].strip()
+                if platform in ["gptzero", "sapling"] and key:
+                    config = {
+                        "mode": "api",
+                        "platform": platform,
+                        "api_key": key
+                    }
+                    save_config(config)
+                    click.echo(click.style(f"✓ Configured successfully to use {platform.upper()} API.\n", fg="green", bold=True))
+                    valid = True
+                else:
+                    click.echo(click.style("Invalid platform name. Supported: gptzero, sapling", fg="red"))
+            else:
+                click.echo(click.style("Invalid format. Please use 'platform_name,API_KEY'", fg="red"))
+    else:
+        config = {
+            "mode": "local"
+        }
+        save_config(config)
+        click.echo(click.style("✓ Configured successfully to use FREE Local Offline Model.\n", fg="green", bold=True))
+        
+    return config
+
+@click.command()
+@click.argument('pdf_path', required=False, type=click.Path())
+@click.option('--reset', is_flag=True, help='Reset the API key or mode configuration.')
+def main(pdf_path, reset):
+    """SabChnagaSi: Check if a PDF file is AI-generated or human-written."""
+    
+    if reset:
+        run_setup()
+        if not pdf_path:
+            click.echo("Configuration reset successful!")
+            return
+            
+    config = load_config()
+    if not config:
+        config = run_setup()
+        
+    if not pdf_path:
+        click.echo(click.style("\nError: Missing PDF file path.", fg="red", bold=True))
+        click.echo("Usage: SabChnagaSi <path_to_pdf>")
+        click.echo("Example: SabChnagaSi report.pdf")
+        click.echo("To reset config, run: SabChnagaSi --reset")
+        return
+
+    # Check if file exists
+    if not os.path.exists(pdf_path):
+        click.echo(click.style(f"\nError: File '{pdf_path}' not found.", fg="red", bold=True))
+        sys.exit(1)
+
+    click.echo(click.style(f"\nAnalyzing PDF: {os.path.basename(pdf_path)}...", fg="cyan"))
+    
+    try:
+        from .extractor import extract_text_from_pdf
+        text = extract_text_from_pdf(pdf_path)
+    except Exception as e:
+        click.echo(click.style(f"Error extracting text: {e}", fg="red", bold=True))
+        sys.exit(1)
+        
+    word_count = len(text.split())
+    click.echo(f"Words extracted: {word_count}")
+    
+    click.echo("Running detection engine. Please wait...")
+    
+    try:
+        from .engine import check_api, check_local
+        if config["mode"] == "api":
+            ai_score = check_api(text, config["platform"], config["api_key"])
+        else:
+            ai_score = check_local(text)
+    except Exception as e:
+        click.echo(click.style(f"\nError running engine check: {e}", fg="red", bold=True))
+        sys.exit(1)
+        
+    percentage = ai_score * 100
+    
+    click.echo("\n" + "="*50)
+    click.echo(click.style("               DETECTION RESULTS                ", bold=True))
+    click.echo("="*50)
+    
+    # Verdict logic
+    if percentage < 20:
+        verdict = "Sab Chnaga Si! (Everything is fine - Written by Human)"
+        verdict_color = "green"
+    elif percentage < 50:
+        verdict = "Thoda Gadbad Hai! (Suspicious / Mixed writing)"
+        verdict_color = "yellow"
+    else:
+        verdict = "Daya, Kuch Toh Gadbad Hai! (Likely generated by AI)"
+        verdict_color = "red"
+        
+    click.echo(f"File Name:      {os.path.basename(pdf_path)}")
+    click.echo(f"Word Count:     {word_count}")
+    click.echo(f"Detection Mode: {'API (' + config['platform'].upper() + ')' if config['mode'] == 'api' else 'Local (FREE)'}")
+    
+    # Print the score with coloring
+    click.echo("AI Score:       ", nl=False)
+    click.echo(click.style(f"{percentage:.2f}% AI-generated", fg=verdict_color, bold=True))
+    
+    click.echo("Verdict:        ", nl=False)
+    click.echo(click.style(verdict, fg=verdict_color, bold=True))
+    click.echo("="*50 + "\n")
+
+if __name__ == '__main__':
+    main()

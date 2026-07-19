@@ -1,0 +1,2 @@
+[console_scripts]
+SabChnagaSi = detector.cli:main

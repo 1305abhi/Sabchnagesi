@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+SabChnagaSi.egg-info/PKG-INFO
+SabChnagaSi.egg-info/SOURCES.txt
+SabChnagaSi.egg-info/dependency_links.txt
+SabChnagaSi.egg-info/entry_points.txt
+SabChnagaSi.egg-info/requires.txt
+SabChnagaSi.egg-info/top_level.txt
+detector/__init__.py
+detector/cli.py
+detector/engine.py
+detector/extractor.py
