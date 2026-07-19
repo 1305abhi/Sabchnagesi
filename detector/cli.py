@@ -51,7 +51,7 @@ def run_setup():
                         "api_key": key
                     }
                     save_config(config)
-                    click.echo(click.style(f"✓ Configured successfully to use {platform.upper()} API.\n", fg="green", bold=True))
+                    click.echo(click.style(f"[OK] Configured successfully to use {platform.upper()} API.\n", fg="green", bold=True))
                     valid = True
                 else:
                     click.echo(click.style("Invalid platform name. Supported: gptzero, sapling", fg="red"))
@@ -62,7 +62,7 @@ def run_setup():
             "mode": "local"
         }
         save_config(config)
-        click.echo(click.style("✓ Configured successfully to use FREE Local Offline Model.\n", fg="green", bold=True))
+        click.echo(click.style("[OK] Configured successfully to use FREE Local Offline Model.\n", fg="green", bold=True))
         
     return config
 

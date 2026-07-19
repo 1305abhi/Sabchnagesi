@@ -1,0 +1,23 @@
+# Python Caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build & Distribution
+build/
+dist/
+*.egg-info/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Configuration files
+.ai-check-config.json
+.env
+
+# IDE files
+.vscode/
+.idea/
